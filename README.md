@@ -1,2 +1,2 @@
-# USAID_WCS_climaterefugia
-Analysis comparing fisheries sustainability metrics TEST
+# WCS-USAID-LB_assessment
+length-based fish stock assessment
