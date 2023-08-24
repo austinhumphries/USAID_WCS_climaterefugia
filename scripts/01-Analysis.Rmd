@@ -1,6 +1,5 @@
 ---
 title: "WCS FIL Project Analysis"
-author: "Authors: Austin Humphries & Emma Strand; last update Aug 22, 2023"
 output:
   github_document: default
   pdf_document:
@@ -32,11 +31,11 @@ library(naniar)
 library(plotrix)
 ```
 
-# Quality Control 
+# Quality Control
 
-## Import dataset 
+## Import dataset
 
-The google drive version shared via WCS USAID google drive folder has several errors with month, fishing gear type, and hidden formatting in excel. For any future analyses, I recommend using the `LengthData_20230809_AHcleaned` excel sheet produced from this script. 
+The google drive version shared via WCS USAID google drive folder has several errors with month, fishing gear type, and hidden formatting in excel. For any future analyses, I recommend using the `LengthData_20230809_AHcleaned` excel sheet produced from this script.
 
 ```{r}
 ## when running future iterations of raw data file, replace the file name below 
@@ -51,7 +50,7 @@ data <- read_excel("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-hump
 nrow(data) ## 957 20230712 download from google drive 
 ```
 
-### Cleaning dataset 
+### Cleaning dataset
 
 **Month and Year**
 
@@ -78,19 +77,19 @@ unique(data$Year) ## all 2022
 unique(data$`Landing Site`)
 ```
 
-**Date Collector** 
+**Date Collector**
 
 ```{r}
 unique(data$`Data Collector`)
 ```
 
-**Group** 
+**Group**
 
 ```{r}
 unique(data$Group)
 ```
 
-**Fishing Gear** 
+**Fishing Gear**
 
 ```{r}
 data <- data %>%
@@ -109,7 +108,7 @@ data <- data %>%
 unique(data$Fishgear)
 ```
 
-**# Boats and Fishers** 
+**\# Boats and Fishers**
 
 ```{r}
 range(data$`# Boats`) ##0-2
@@ -124,7 +123,7 @@ data <- data %>%
 hist(data$Weight_g) ## 0 - 1113 
 ```
 
-**Fish ID** 
+**Fish ID**
 
 ```{r}
 ## unique() outputs the name of each unique character in Family
@@ -136,16 +135,15 @@ sort(unique(data$Species))
 
 This dataset was pretty clean
 
-Exporting clean set 
+Exporting clean set
 
 ```{r}
 data %>% write_xlsx("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/LengthData_20230809_AHcleaned.xlsx")
 ```
 
+# Length based summary
 
-# Length based summary 
-
-Importing Galligan dataset from other project  
+Importing Galligan dataset from other project
 
 ```{r}
 galligan <- read.csv('/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/SpeciesData_GatedTraps_Galligan_expanded.csv', header=TRUE, sep = ",") %>%
@@ -156,7 +154,7 @@ data2 <- left_join(data, galligan, by = c("Species"))
 nrow(data2) ## should be 957- this should be match the original number b/c haven't removed any data 
 ```
 
-Checking for species not found in Galligan extended that were found in the larger dataset: 
+Checking for species not found in Galligan extended that were found in the larger dataset:
 
 ```{r}
 data2 %>% filter(is.na(Lmat_cm)) %>% dplyr::select(Species) %>% distinct()
@@ -193,16 +191,14 @@ Exporting dataset
 data3 %>% write_xlsx("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/LengthData_20230809_LmatLopt.xlsx")
 ```
 
-
-
-## 2. Calculating Spawning Potential Ratio 
+## 2. Calculating Spawning Potential Ratio
 
 ### 2.1 Prepare dataframes
 
-To use the package in step 2.2, we need each species to have a single dataframe with only length values 
+To use the package in step 2.2, we need each species to have a single dataframe with only length values
 
 ```{r}
-#unique(data2$Species) ## 102 species ; 71 with > 3 observations 
+#unique(data2$Species) ## 102 species ; 26 with > 10 observations 
 
 sample_size <- data2 %>% 
   ## creating a dataframe for only length values 
@@ -211,29 +207,28 @@ sample_size <- data2 %>%
   ## for those species with above a catch count of 3 
   mutate(sample_size = n()) %>% ungroup() 
   
-sample_size %>% filter(!sample_size < 15) %>% dplyr::select(-sample_size) %>%
+sample_size %>% filter(!sample_size < 10) %>% dplyr::select(-sample_size) %>%
   ## for each Species, this function will export a csv
   group_by(Species) %>%
-  group_walk(~ write_csv(.x, file = paste0("data/species/", .y$Species, ".csv")))
+  group_walk(~ write_csv(.x, file = paste0("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/species/", .y$Species, ".csv")))
 ```
-
 
 ![](https://edis.ifas.ufl.edu/image/Ip82bus9fm/screen)
 
-More info here: https://edis.ifas.ufl.edu/publication/FA241. 
+More info here: <https://edis.ifas.ufl.edu/publication/FA241>.
 
-R package to do this: https://sfg-ucsb.github.io/fishery-manageR/wrapping-up.html and https://cran.r-project.org/web/packages/LBSPR/vignettes/LBSPR.html. 
+R package to do this: <https://sfg-ucsb.github.io/fishery-manageR/wrapping-up.html> and <https://cran.r-project.org/web/packages/LBSPR/vignettes/LBSPR.html>.
 
-### 2.1 Install package 
+### 2.1 Install package
 
 ```{r}
-#install.packages("LBSPR")
+## install.packages("LBSPR")
 library(LBSPR)
 ```
 
 ### 2.2 Fitting Empirical Length Data
 
-Length data is located in `data/species/` with 71 separate csv files. The goal is to calculate SPR for each species using this empirical data. 
+Length data is located in `data/species/` with 26 separate csv files. The goal is to calculate SPR for each species using this empirical data.
 
 ```{r}
 # ## create new empty objects
@@ -269,11 +264,10 @@ Length data is located in `data/species/` with 71 separate csv files. The goal i
 
 Estimate MSY using catch estimates based on the 5 landing sites.
 
-1. Evaluate this for 4 categories or levels: a.) the most abundant species, b.) the most abundant families, c.) fishable, d.) target catch.  
-2. 
+1.  Evaluate this for 4 categories or levels: a.) the most abundant species, b.) the most abundant families, c.) fishable, d.) target catch.\
+2.  
 
-
-### 3.1 Calculate the most abundant species and families and create list. 
+### 3.1 Calculate the most abundant species and families and create list.
 
 ```{r}
 abundant_species <- sample_size %>% dplyr::select(-Length) %>% distinct() %>%
@@ -294,12 +288,12 @@ abundant_families <- data2 %>%
   slice(1:10)
 ```
 
-### 3.2 Downlaod TropFishR package 
+### 3.2 Downlaod TropFishR package
 
-Resources:   
-- https://sfg-ucsb.github.io/fishery-manageR/wrapping-up.html   
-- https://github.com/tokami/TropFishR    
-- http://cran.nexr.com/web/packages/TropFishR/vignettes/tutorial.html  
+Resources:\
+- <https://sfg-ucsb.github.io/fishery-manageR/wrapping-up.html>\
+- <https://github.com/tokami/TropFishR>\
+- <http://cran.nexr.com/web/packages/TropFishR/vignettes/tutorial.html>
 
 #### 3.2.1 Installing and loading example data
 
@@ -319,7 +313,7 @@ data("synLFQ7")
 
 ### 3.3 Biological stock characteristics
 
-Data frame starts as 4 columns. Stuck on how to reproduce this with our data. 
+Data frame starts as 4 columns. Stuck on how to reproduce this with our data.
 
 ```{r}
 head(synLFQ7)
@@ -333,17 +327,16 @@ synLFQ7_catch <- as.data.frame(synLFQ7$catch)
 ## each column would be a survey? 
 ```
 
-
 #### 3.3.1 Growth Parameters
 
 Commonly used growth parameters are the asymptotic length (Linf), the growth coefficient (K) and the theoretical length at age zero (t0) of the von Bertalanffy growth function (VBGF). The ELEFAN (ELectronic LEngth Frequency ANalysis) methods allow to estimate Linf and K from LFQ data by restructuring the data and fitting growth curves through the restructured LFQ data (Pauly 1980).
 
-**Visualize data first** 
+**Visualize data first**
 
-- `lfqModify` allows to change the bin size by setting the argument “bin_size” to a numeric 
-- `lfqRestructure` is used for the restructuring process  
-- `MA` allows to control the number of bins used for the moving average  
-- `addl.sqrt` allows to apply an additional squareroot transformation in the restructuring process, which reduces the weighting of large individuals 
+-   `lfqModify` allows to change the bin size by setting the argument "bin_size" to a numeric
+-   `lfqRestructure` is used for the restructuring process\
+-   `MA` allows to control the number of bins used for the moving average\
+-   `addl.sqrt` allows to apply an additional squareroot transformation in the restructuring process, which reduces the weighting of large individuals
 
 ```{r}
 # set seed value for reproducible results
@@ -362,12 +355,12 @@ plot(lfqbin, Fname = "rcounts", date.axis = "modern")
 par(opar)
 ```
 
-**Estimate of Linf with various methods** 
+**Estimate of Linf with various methods**
 
 To get a first estimate of Linf, the **Powell-Wetherall method (Wetherall, Polovina, and Ralston 1987)** can be applied. The method requires a catch vetor per length class representative for the length distribution in yearly catches instead of the catch matrix. Powell-Wetherall method returns a Linf(± standard error) of 135 ± 5 cm, as determined by the x-intercept of the regression line
 
-- `catch_columns`: allows to choose the columns of the catch matrix which will be summarised for the analysis. If data of several years are available, the data can be aggregated yearly and the results can be averaged or the data of several years is analysed jointly assuming constant growth parameters.  
-- `reg_int` is necessary in this tutorial because the “powell_wetherall” function includes an interactive plotting function where points for the regression analysis have to be selected by the user. Typically, one would not use this argument and instead choose which points to include in the regression analysis by clicking on the interactive plot (for more information see help(powell_wetherall). 
+-   `catch_columns`: allows to choose the columns of the catch matrix which will be summarised for the analysis. If data of several years are available, the data can be aggregated yearly and the results can be averaged or the data of several years is analysed jointly assuming constant growth parameters.\
+-   `reg_int` is necessary in this tutorial because the "powell_wetherall" function includes an interactive plotting function where points for the regression analysis have to be selected by the user. Typically, one would not use this argument and instead choose which points to include in the regression analysis by clicking on the interactive plot (for more information see help(powell_wetherall).
 
 ```{r}
 ### ESTIMATE OF LINF 
@@ -383,9 +376,9 @@ paste("Linf =",round(res_PW$Linf_est), "±", round(res_PW$se_Linf))
 
 This estimate can be used for further analysis with **ELEFAN**.
 
-In TropFishR, there are 4 different methods based on the ELEFAN functionality:  
+In TropFishR, there are 4 different methods based on the ELEFAN functionality:
 
-1. K-Scan for the estimation of K for a fixed value of Linf. *This method, however, does not allow to test if different combinations of Linf and K might result in a better fit (see RSA next)*.  
+1.  K-Scan for the estimation of K for a fixed value of Linf. *This method, however, does not allow to test if different combinations of Linf and K might result in a better fit (see RSA next)*.
 
 ```{r}
 # ELEFAN with K-Scan
@@ -396,7 +389,7 @@ res_KScan <- ELEFAN(synLFQ7a, Linf_fix = res_PW$Linf_est,
 res_KScan$par; res_KScan$Rn_max
 ```
 
-2. Response Surface Analysis (RSA). RSA with a range around the Linf estimate from the Powell-Wetherall method can be used to check different combinations. Alternatively, the maximum length in the data or the maxmimum length class1 might be used as an reference for the search space of Linf (C. C. Taylor 1958; Beverton 1963). For this data set we chose a conservative range of the estimate from the Powell-Wetherall method plus/minus 10 cm. Any range can be chosen, while a larger search space increases computing time but gives a better overview of the score over a wide range of Linf and K combinations. A K range from 0.01 to 2 is relatively wide and should generally be sufficient. 
+2.  Response Surface Analysis (RSA). RSA with a range around the Linf estimate from the Powell-Wetherall method can be used to check different combinations. Alternatively, the maximum length in the data or the maxmimum length class1 might be used as an reference for the search space of Linf (C. C. Taylor 1958; Beverton 1963). For this data set we chose a conservative range of the estimate from the Powell-Wetherall method plus/minus 10 cm. Any range can be chosen, while a larger search space increases computing time but gives a better overview of the score over a wide range of Linf and K combinations. A K range from 0.01 to 2 is relatively wide and should generally be sufficient.
 
 *It is generally not recommendable to settle with the first estimate from RSA, as the method might find many local optima with close score values, but returns only the estimates associated with the highest score value.*
 
@@ -410,7 +403,7 @@ res_RSA <- ELEFAN(synLFQ7a, Linf_range = seq(119,139,1), MA = 5,
 res_RSA$par; res_RSA$Rn_max
 ```
 
-It is recommended analysing several local maxima of the score function with a finer resolution for both parameters and compare the calculated score values and fit graphically. For this data, this automated procedure (code below) returns the highest score value (0.781) for the parameters Linf= 122.2, K = 0.21, and tanchor= 0.38 (more information on tanchor further down).    
+It is recommended analysing several local maxima of the score function with a finer resolution for both parameters and compare the calculated score values and fit graphically. For this data, this automated procedure (code below) returns the highest score value (0.781) for the parameters Linf= 122.2, K = 0.21, and tanchor= 0.38 (more information on tanchor further down).
 
 *Note that RSA does not allow to optimise over the parameters C and ts of the seasonalised VBGF (soVBGF). It only allows to compare the score of ELEFAN runs with manually fixed C and ts values.*
 
@@ -437,10 +430,9 @@ for(i in 1:3){
 results <- do.call(rbind, res_loop)
 ```
 
+In contrast, the newly implemented **ELEFAN method ELEFAN_SA** using a simulated annealing algorithm (Xiang et al. 2013) and ELEFAN_GA using genetic algorithms allow for the optimisation of the soVBGF (M. H. Taylor and Mildenberger 2017). The optimisation procedure in the simulated annealing algorithm gradually reduces the stochasticity of the search process as a function of the decreasing "temperature" value, which describes the probability of accepting worse conditions. In reference to the results of the Powell-Wetherall plot a second search within the range of 129 ± 10 cm for Linf is conducted. The search space of K is limted by 0.01 and 1.
 
-In contrast, the newly implemented **ELEFAN method ELEFAN_SA** using a simulated annealing algorithm (Xiang et al. 2013) and ELEFAN_GA using genetic algorithms allow for the optimisation of the soVBGF (M. H. Taylor and Mildenberger 2017). The optimisation procedure in the simulated annealing algorithm gradually reduces the stochasticity of the search process as a function of the decreasing “temperature” value, which describes the probability of accepting worse conditions. In reference to the results of the Powell-Wetherall plot a second search within the range of 129 ± 10 cm for Linf is conducted. The search space of K is limted by 0.01 and 1.
-
-3. ELEFAN with simulated annealing (`ELEFAN_SA`). Green dots indicate the runnning minimum value of the cost function, while blue dots indicate the mean score of each iteration. The red line shows the decline of the ‘temperature’ value, which describes the probability of accepting worse solutions as the parameter space is explored.   
+3.  ELEFAN with simulated annealing (`ELEFAN_SA`). Green dots indicate the runnning minimum value of the cost function, while blue dots indicate the mean score of each iteration. The red line shows the decline of the 'temperature' value, which describes the probability of accepting worse solutions as the parameter space is explored.
 
 ```{r}
 # run ELEFAN with simulated annealing
@@ -481,8 +473,7 @@ colnames(JKconf) <- c("lower","upper")
 JKconf
 ```
 
-
-4. ELEFAN with a genetic algorithm (`ELEFAN_GA`), where the last three methods all allow to estimate K and Linf simultaneously. Green dots indicate the runnning maximum value of the fitness function, while blue dots indicate the mean score of each iteration. 
+4.  ELEFAN with a genetic algorithm (`ELEFAN_GA`), where the last three methods all allow to estimate K and Linf simultaneously. Green dots indicate the runnning maximum value of the fitness function, while blue dots indicate the mean score of each iteration.
 
 Depending on the number of sampling times (columns in the catch matrix) and the `SA_time`, this loop can take some time as ELEFAN runs several times, each time removing the catch vector of one of the sampling times. Another new optimisation routine is based on generic algorithms and is applied by:
 
@@ -496,11 +487,11 @@ res_GA <- ELEFAN_GA(synLFQ7a, MA = 5, seasonalised = TRUE, maxiter = 50, addl.sq
 res_GA$par; res_GA$Rn_max
 ```
 
-The generation number of the `ELEFAN_GA` was set to only 50 generations (argument ‘maxiter’), which returns following results: Linf= 122.33, K = 0.22, tanchor= 0.49, C = 0.53, and ts= 0.48 with a score value (Rnmax) of 0.41. As with ELEFAN_SA the generation number was hold down due to the vignette format and should be increased in order to find more stable results.
+The generation number of the `ELEFAN_GA` was set to only 50 generations (argument 'maxiter'), which returns following results: Linf= 122.33, K = 0.22, tanchor= 0.49, C = 0.53, and ts= 0.48 with a score value (Rnmax) of 0.41. As with ELEFAN_SA the generation number was hold down due to the vignette format and should be increased in order to find more stable results.
 
-According to (Pauly 1980) it is not possible to estimate t0(theoretical age at length zero) from LFQ data alone. However, this parameter does not influence results of the methods of the traditional stock assessment workflow (catch curve, VPA/CA, and yield per recruit model) and can be set to zero (Mildenberger, unpublished). The ELEFAN methods in this package do not return starting points as FiSAT II users might be used to. Instead, they return the parameter `t_anchor`, which describes the fraction of the year where yearly repeating growth curves cross length equal to zero; for example a value of 0.25 refers to April 1st of any year. The maximum age is estimated within the ELEFAN function: it is the age when length is 0.95 Linf. However, this value can also be fixed with the argument “agemax”, when alternative information about the maximum age of the fish species is available.
+According to (Pauly 1980) it is not possible to estimate t0(theoretical age at length zero) from LFQ data alone. However, this parameter does not influence results of the methods of the traditional stock assessment workflow (catch curve, VPA/CA, and yield per recruit model) and can be set to zero (Mildenberger, unpublished). The ELEFAN methods in this package do not return starting points as FiSAT II users might be used to. Instead, they return the parameter `t_anchor`, which describes the fraction of the year where yearly repeating growth curves cross length equal to zero; for example a value of 0.25 refers to April 1st of any year. The maximum age is estimated within the ELEFAN function: it is the age when length is 0.95 Linf. However, this value can also be fixed with the argument "agemax", when alternative information about the maximum age of the fish species is available.
 
-The fit of estimated growth parameters can also be explored visually and indicates high similarity with true growth curves and a good fit through the peaks of the LFQ data. The growth curves with the true values are displayed in grey, while the blue and green curves represent the curves of `ELEFAN_SA` and `ELEFAN_GA`, respectively. 
+The fit of estimated growth parameters can also be explored visually and indicates high similarity with true growth curves and a good fit through the peaks of the LFQ data. The growth curves with the true values are displayed in grey, while the blue and green curves represent the curves of `ELEFAN_SA` and `ELEFAN_GA`, respectively.
 
 ```{r}
 # plot LFQ and growth curves
@@ -515,7 +506,7 @@ lt <- lfqFitCurves(synLFQ7a, par = res_GA$par,
                    draw = TRUE, col = "darkgreen", lty = 1, lwd=1.5)
 ```
 
-For further analysis, the example uses the outcomes of the simulated annealing approach by adding them to the Thumbprint Emperor data list. 
+For further analysis, the example uses the outcomes of the simulated annealing approach by adding them to the Thumbprint Emperor data list.
 
 ```{r}
 # assign estimates to the data list
@@ -523,8 +514,7 @@ synLFQ7a <- c(synLFQ7a, res_SA$par)
 class(synLFQ7a) <- "lfq"
 ```
 
-
-#### 3.3.2 Natural Mortality 
+#### 3.3.2 Natural Mortality
 
 The instantaneous natural mortality rate (M) is an influential parameter of stock assessment models and its estimation is challenging (Kenchington 2014; Powers 2014). When no controlled experiments or tagging data is available the main approach for its estimation is to use empirical formulas. Overall, there are at least 30 different empirical formulas for the estimation of this parameter (Kenchington 2014) relying on correlations with life history parameters and/or environmental information. The example applies the most recent formula, which is based upon a meta-analysis of 201 fish species (Then et al. 2015). This method requires estimates of the VBGF growth parameters (Linf and K; Then et al. 2015).
 
@@ -539,113 +529,106 @@ paste("M =", as.numeric(Ms))
 
 #### 3.3.3 Fisheries aspects
 
-**Exploitation level** 
+**Exploitation level**
 
-In order to estimate the level of exploitation, knowledge on fishing mortality (F) (usually derived by subtracting natural mortality from total mortality) and gear selectivity is necessary. The length-converted catch curve allows the estimation of the instantaneous total mortality rate (Z) of LFQ data and the derivation of a selection ogive. 
+In order to estimate the level of exploitation, knowledge on fishing mortality (F) (usually derived by subtracting natural mortality from total mortality) and gear selectivity is necessary. The length-converted catch curve allows the estimation of the instantaneous total mortality rate (Z) of LFQ data and the derivation of a selection ogive.
 
-The example skips an in-depth selectivity exploration, because more data would be required for this assessment. The following approach assumes a logistic selection ogive, typical for trawl-net selectivity, which may provide an appropriate first estimate in the case of LFQ data derived from a mixture of gears. Total mortality rate is estimated with a sample of the catch representative for the whole year. 
+The example skips an in-depth selectivity exploration, because more data would be required for this assessment. The following approach assumes a logistic selection ogive, typical for trawl-net selectivity, which may provide an appropriate first estimate in the case of LFQ data derived from a mixture of gears. Total mortality rate is estimated with a sample of the catch representative for the whole year.
 
-Arguments: 
-- Besides, changing the bin size, the function `lfqModify` allows to rearrange the catch matrix in the required format (catch vector per year) and to pool the largest length classes with only a few individuals into a plus group (necessary later for the cohort analysis).   
-- As with the Powell-Wetherall method, the `reg_int` argument is necessary to avoid the interactive plotting function (more information in `help(catchCurve)`).   
-- The argument `calc_ogive` allows the estimation of the selection ogive. 
+Arguments: - Besides, changing the bin size, the function `lfqModify` allows to rearrange the catch matrix in the required format (catch vector per year) and to pool the largest length classes with only a few individuals into a plus group (necessary later for the cohort analysis).\
+- As with the Powell-Wetherall method, the `reg_int` argument is necessary to avoid the interactive plotting function (more information in `help(catchCurve)`).\
+- The argument `calc_ogive` allows the estimation of the selection ogive.
 
 In the example, the catch curve analysis returns a Z value of 0.43 year−1. By subtracting M from Z, the fishing mortality rate is derived: 0.18 year−1. The exploitation rate is defined as E=F/Z and in this example 0.42 The selectivity function of the catch curve estimated a length at first capture (L50) of 33.9 cm.
 
-**Can I input my own Linf and K values instead of the running the above models? Should be able to..** 
+**Can I input my own Linf and K values instead of the running the above models? Should be able to..**
 
 ```{r}
 # summarise catch matrix into vector and add plus group which is smaller than Linf
 synLFQ7b <- lfqModify(synLFQ7a, vectorise_catch = TRUE, plus_group = 118)
 # run catch curve
-res_cc <- catchCurve(synLFQ7b, reg_int = c(9,27), calc_ogive = TRUE)
+#res_cc <- catchCurve(synLFQ7b, reg_int = c(9,27), calc_ogive = TRUE)
 # assign estimates to the data list
-synLFQ7b$Z <- res_cc$Z
-synLFQ7b$FM <- as.numeric(synLFQ7b$Z - synLFQ7b$M)
-synLFQ7b$E <- synLFQ7b$FM/synLFQ7b$Z
+#synLFQ7b$Z <- res_cc$Z
+#synLFQ7b$FM <- as.numeric(synLFQ7b$Z - synLFQ7b$M)
+#synLFQ7b$E <- synLFQ7b$FM/synLFQ7b$Z
 ```
 
 #### 3.3.4 Stock size and status
 
-**Stock size and composition** 
+**Stock size and composition**
 
-The stock size and fishing mortality per length class can be estimated with **Jones’ length converted cohort analysis (CA, Jones 1984)** - a modification of Pope’s virtual population analysis (VPA) for LFQ data. Cohort analysis estimates the stock size based on the total catches, it is therefore necessary that the catch vector is representative for the full stock and for all fisheries catches targeting this stock.
+The stock size and fishing mortality per length class can be estimated with **Jones' length converted cohort analysis (CA, Jones 1984)** - a modification of Pope's virtual population analysis (VPA) for LFQ data. Cohort analysis estimates the stock size based on the total catches, it is therefore necessary that the catch vector is representative for the full stock and for all fisheries catches targeting this stock.
 
-Requirements:   
-- estimates from preceeding analysis and in addition the parameters a and b of the allometric length-weight relationship.    
-- an estimate for the terminal fishing mortality (terminal_F), which was set in the example to the result of the catch curve minus natural mortality (0.185).  
+Requirements:\
+- estimates from preceeding analysis and in addition the parameters a and b of the allometric length-weight relationship.\
+- an estimate for the terminal fishing mortality (terminal_F), which was set in the example to the result of the catch curve minus natural mortality (0.185).
 
-Arguments:  
-- `catch_corFac` can be used to raise the catches to be yearly or spatially representative. In the example, it is assumed that all fisheries targeting the stock were sampled and the catch during the four missing months corresponds to the average monthly catch (catch_corFac = (1 + 4/12)).  
-- `lfqModify` with the argument `plus_group` is necessary as CA does not allow length classes larger than Linf  
-- If `plus_group` is set to TRUE only, the function shows the catches per length class and asks the user to enter a length class corresponding to the length class of the new “plus group”.  
-- If `plus_group` is set to a numeric (in example = 122, which is just below Linf), the plus group is created at this length class (numeric has to correspond to existing length class in vector “midLengths”). 
+Arguments:\
+- `catch_corFac` can be used to raise the catches to be yearly or spatially representative. In the example, it is assumed that all fisheries targeting the stock were sampled and the catch during the four missing months corresponds to the average monthly catch (catch_corFac = (1 + 4/12)).\
+- `lfqModify` with the argument `plus_group` is necessary as CA does not allow length classes larger than Linf\
+- If `plus_group` is set to TRUE only, the function shows the catches per length class and asks the user to enter a length class corresponding to the length class of the new "plus group".\
+- If `plus_group` is set to a numeric (in example = 122, which is just below Linf), the plus group is created at this length class (numeric has to correspond to existing length class in vector "midLengths").
 
-The results show the logistic shaped fishing pattern across length classes (red line in CA plot). 
+The results show the logistic shaped fishing pattern across length classes (red line in CA plot).
 
 ```{r}
-synLFQ7c <- synLFQ7b
-
-# assign length-weight parameters to the data list
-synLFQ7c$a <- 0.015
-synLFQ7c$b <- 3
-# run CA
-vpa_res <- VPA(param = synLFQ7c, terminalF = synLFQ7c$FM,
-               analysis_type = "CA",
-               plot=TRUE, catch_corFac = (1+4/12))
-# stock size
-sum(vpa_res$annualMeanNr, na.rm =TRUE) / 1e3
-#> [1] 446.8332
-# stock biomass
-sum(vpa_res$meanBiomassTon, na.rm = TRUE)
-#> [1] 1395690
-# assign F per length class to the data list
-synLFQ7c$FM <- vpa_res$FM_calc
+# synLFQ7c <- synLFQ7b
+# 
+# # assign length-weight parameters to the data list
+# synLFQ7c$a <- 0.015
+# synLFQ7c$b <- 3
+# # run CA
+# vpa_res <- VPA(param = synLFQ7c, terminalF = synLFQ7c$FM,
+#                analysis_type = "CA",
+#                plot=TRUE, catch_corFac = (1+4/12))
+# # stock size
+# sum(vpa_res$annualMeanNr, na.rm =TRUE) / 1e3
+# #> [1] 446.8332
+# # stock biomass
+# sum(vpa_res$meanBiomassTon, na.rm = TRUE)
+# #> [1] 1395690
+# # assign F per length class to the data list
+# synLFQ7c$FM <- vpa_res$FM_calc
 ```
 
+**Yield per recruit modelling**
 
-**Yield per recruit modelling** 
+Prediction models (or per-recruit models, e.g. Thompson and Bell model) allow to evaluate the status of a fish stock in relation to reference levels and to infer input control measures, such as restricting fishing effort or regulating gear types and mesh sizes.
 
-Prediction models (or per-recruit models, e.g. Thompson and Bell model) allow to evaluate the status of a fish stock in relation to reference levels and to infer input control measures, such as restricting fishing effort or regulating gear types and mesh sizes. 
+Requirements: - a: defined above - b: defined above - M or Z (Z can be calculated from the catchCurve)
 
-Requirements:
-- a: defined above
-- b: defined above 
-- M or Z (Z can be calculated from the catchCurve)
-
-Arguments:   
-- By default the Thompson and Bell model assumes knife edge selection (L25= L50= L75); however, the parameter `s_list` allows for changes of the selectivity assumptions.  
-- `FM_change` determines the range of the fishing mortality for which to estimate the yield and biomass trajectories.  
-- By setting the argument `stock_size_1` to 1, all results are per recruit  
+Arguments:\
+- By default the Thompson and Bell model assumes knife edge selection (L25= L50= L75); however, the parameter `s_list` allows for changes of the selectivity assumptions.\
+- `FM_change` determines the range of the fishing mortality for which to estimate the yield and biomass trajectories.\
+- By setting the argument `stock_size_1` to 1, all results are per recruit\
 - If the number of recruits (recruitment to the fishery) are known, the exact yield and biomass can be estimated. The arguments `curr.E` and `curr.Lc` allow to derive and visualise yield and biomass (per recruit) values for current fishing patterns.
 
-In the second application of this model, the impact of mesh size restrictions on yield is explored by changing Lc (`Lc_change`) and F (`FM_change`, or exploitation rate, `E_change`) simultaneously. The resulting estimates are presented as an isopleth graph showing yield per recruit. 
+In the second application of this model, the impact of mesh size restrictions on yield is explored by changing Lc (`Lc_change`) and F (`FM_change`, or exploitation rate, `E_change`) simultaneously. The resulting estimates are presented as an isopleth graph showing yield per recruit.
 
 ```{r}
-# Thompson and Bell model with changes in F
-TB1 <- predict_mod(synLFQ7c, type = "ThompBell",
-                   FM_change = seq(0,1.5,0.05),  stock_size_1 = 1,
-                   curr.E = synLFQ7c$E, plot = FALSE, hide.progressbar = TRUE)
-
-# Thompson and Bell model with changes in F and Lc
-TB2 <- predict_mod(synLFQ7c, type = "ThompBell",
-                   FM_change = seq(0,1.5,0.1), Lc_change = seq(25,50,0.1),
-                   stock_size_1 = 1,
-                   curr.E = synLFQ7c$E, curr.Lc = res_cc$L50,
-                   s_list = list(selecType = "trawl_ogive",
-                                 L50 = res_cc$L50, L75 = res_cc$L75),
-                   plot = FALSE, hide.progressbar = TRUE)
-
-# plot results
-par(mfrow = c(2,1), mar = c(4,5,2,4.5), oma = c(1,0,0,0))
-plot(TB1, mark = TRUE)
-mtext("(a)", side = 3, at = -1, line = 0.6)
-plot(TB2, type = "Isopleth", xaxis1 = "FM", mark = TRUE, contour = 6)
-mtext("(b)", side = 3, at = -0.1, line = 0.6)
-
-# Biological reference levels
-TB1$df_Es
-TB1$currents
+# # Thompson and Bell model with changes in F
+# TB1 <- predict_mod(synLFQ7c, type = "ThompBell",
+#                    FM_change = seq(0,1.5,0.05),  stock_size_1 = 1,
+#                    curr.E = synLFQ7c$E, plot = FALSE, hide.progressbar = TRUE)
+# 
+# # Thompson and Bell model with changes in F and Lc
+# TB2 <- predict_mod(synLFQ7c, type = "ThompBell",
+#                    FM_change = seq(0,1.5,0.1), Lc_change = seq(25,50,0.1),
+#                    stock_size_1 = 1,
+#                    curr.E = synLFQ7c$E, curr.Lc = res_cc$L50,
+#                    s_list = list(selecType = "trawl_ogive",
+#                                  L50 = res_cc$L50, L75 = res_cc$L75),
+#                    plot = FALSE, hide.progressbar = TRUE)
+# 
+# # plot results
+# par(mfrow = c(2,1), mar = c(4,5,2,4.5), oma = c(1,0,0,0))
+# plot(TB1, mark = TRUE)
+# mtext("(a)", side = 3, at = -1, line = 0.6)
+# plot(TB2, type = "Isopleth", xaxis1 = "FM", mark = TRUE, contour = 6)
+# mtext("(b)", side = 3, at = -0.1, line = 0.6)
+# 
+# # Biological reference levels
+# TB1$df_Es
+# TB1$currents
 ```
-
-
