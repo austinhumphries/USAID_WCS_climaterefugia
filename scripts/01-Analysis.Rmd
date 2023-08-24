@@ -36,11 +36,13 @@ library(plotrix)
 
 ## Import dataset 
 
-The google drive version shared via WCS USAID google drive folder has several errors with month, fishing gear type, and hidden formatting in excel. For any future analyses, I recommend using the `LengthData_20230712_AHcleaned` excel sheet produced from this script. 
+The google drive version shared via WCS USAID google drive folder has several errors with month, fishing gear type, and hidden formatting in excel. For any future analyses, I recommend using the `LengthData_20230809_AHcleaned` excel sheet produced from this script. 
 
 ```{r}
 ## when running future iterations of raw data file, replace the file name below 
-data <- read_excel("data/LengthData_20230809.xlsx", sheet = "Clean_data",
+## having troubles with file path so using the absolute path instead
+
+data <- read_excel("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/LengthData_20230809.xlsx", sheet = "Clean_data",
                                 col_types = c("date", "text", "text", "text", "text", 
                                               "text", "text", "numeric", "numeric", "text",
                                               "text", "numeric", "numeric", "numeric")) %>%
@@ -137,7 +139,7 @@ This dataset was pretty clean
 Exporting clean set 
 
 ```{r}
-data %>% write_xlsx("data/LengthData_20230809_AHcleaned.xlsx")
+data %>% write_xlsx("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/LengthData_20230809_AHcleaned.xlsx")
 ```
 
 
@@ -146,7 +148,7 @@ data %>% write_xlsx("data/LengthData_20230809_AHcleaned.xlsx")
 Importing Galligan dataset from other project  
 
 ```{r}
-galligan <- read.csv('data/SpeciesData_GatedTraps_Galligan_expanded.csv', header=TRUE, sep = ",") %>%
+galligan <- read.csv('/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/SpeciesData_GatedTraps_Galligan_expanded.csv', header=TRUE, sep = ",") %>%
   dplyr::select(-Family)
 ## 260 species included in the above sheet 
 
@@ -172,10 +174,6 @@ data2 <- data2 %>%
 hist(data2$Lopt_ratio) ## range = 0.2074522 3.5000000
 hist(data2$Lmat_ratio) ## range = 0.2672897 3.1111111
 
-## checking means
-mean(data2$Lopt_ratio) ## 0.9871796
-mean(data2$Lmat_ratio) ## 1.087663
-
 ```
 
 ```{r}
@@ -192,7 +190,7 @@ data3
 Exporting dataset
 
 ```{r}
-data3 %>% write_xlsx("data/LengthData_20230809_LmatLopt.xlsx")
+data3 %>% write_xlsx("/Users/austinhumphries/Library/CloudStorage/GoogleDrive-humphries@uri.edu/My Drive/R projects/USAID_WCS_climaterefugia/data/LengthData_20230809_LmatLopt.xlsx")
 ```
 
 
